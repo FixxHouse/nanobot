@@ -36,7 +36,7 @@ class WebhookChannel(BaseChannel):
 
     @classmethod
     def default_config(cls) -> dict[str, Any]:
-        return WebhookConfig().model_dump(by_alias=True)
+        return {"enabled": False, "port": 9000, "timeout": 120, "allowFrom": []}
 
     async def start(self) -> None:
         self._running = True
