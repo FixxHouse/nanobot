@@ -4,20 +4,9 @@ from typing import Any
 import aiohttp
 from aiohttp import web
 from loguru import logger
-from pydantic import Field
 
 from nanobot.channels.base import BaseChannel
 from nanobot.bus.events import OutboundMessage
-from nanobot.config.schema import Base
-
-
-class WebhookConfig(Base):
-    """Webhook channel configuration."""
-
-    enabled: bool = False
-    port: int = 9000
-    timeout: int = 120
-    allow_from: list[str] = Field(default_factory=list)
 
 
 class WebhookChannel(BaseChannel):
@@ -25,10 +14,7 @@ class WebhookChannel(BaseChannel):
     display_name = "Webhook"
 
     def __init__(self, config: Any, bus: Any):
-        if isinstance(config, dict):
-            config = WebhookConfig.model_validate(config)
         super().__init__(config, bus)
-        self.config: WebhookConfig = config
         # chat_id -> callback_url (for async callback mode)
         self._callbacks: dict[str, str] = {}
         # chat_id -> asyncio.Future (for sync wait mode)
@@ -40,7 +26,7 @@ class WebhookChannel(BaseChannel):
 
     async def start(self) -> None:
         self._running = True
-        port = self.config.port
+        port = self.config.get("port", 9000)
 
         app = web.Application()
         app.router.add_post("/message", self._on_request)
@@ -105,7 +91,7 @@ class WebhookChannel(BaseChannel):
 
         # Sync mode: wait for agent reply within the same HTTP request
         if sync:
-            timeout = self.config.timeout
+            timeout = self.config.get("timeout", 120)
             fut: asyncio.Future = asyncio.get_event_loop().create_future()
             self._waiters[chat_id] = fut
 
