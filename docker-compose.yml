@@ -13,6 +13,7 @@ services:
     restart: unless-stopped
     ports:
       - 18790:18790
+      - 9000:9000
     deploy:
       resources:
         limits:
