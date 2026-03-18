@@ -24,7 +24,7 @@ RUN mkdir -p nanobot bridge && touch nanobot/__init__.py && \
 COPY nanobot/ nanobot/
 COPY bridge/ bridge/
 COPY nanobot-channel-webhook/ nanobot-channel-webhook/
-RUN uv pip install --system --no-cache . && \
+RUN uv pip install --system --no-cache --reinstall . && \
     uv pip install --system --no-cache ./nanobot-channel-webhook
 
 # Build the WhatsApp bridge
