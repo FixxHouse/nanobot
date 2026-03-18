@@ -20,12 +20,12 @@ RUN mkdir -p nanobot bridge && touch nanobot/__init__.py && \
     uv pip install --system --no-cache . && \
     rm -rf nanobot bridge
 
-# Copy the full source and install
+# Copy the full source and install (force-reinstall to override cached dummy layer)
 COPY nanobot/ nanobot/
 COPY bridge/ bridge/
 COPY nanobot-channel-webhook/ nanobot-channel-webhook/
-RUN uv pip install --system --no-cache --reinstall . && \
-    uv pip install --system --no-cache ./nanobot-channel-webhook
+RUN uv pip install --system --no-cache --force-reinstall --no-deps . && \
+    uv pip install --system --no-cache --no-deps ./nanobot-channel-webhook
 
 # Build the WhatsApp bridge
 WORKDIR /app/bridge
