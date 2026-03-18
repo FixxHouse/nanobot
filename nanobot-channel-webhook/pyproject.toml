@@ -1,0 +1,14 @@
+[project]
+name = "nanobot-channel-webhook"
+version = "0.1.0"
+dependencies = ["nanobot", "aiohttp"]
+
+[project.entry-points."nanobot.channels"]
+webhook = "nanobot_channel_webhook:WebhookChannel"
+
+[tool.setuptools]
+packages = ["nanobot_channel_webhook"]
+
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
