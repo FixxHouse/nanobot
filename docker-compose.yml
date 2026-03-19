@@ -3,14 +3,30 @@ x-common-config: &common-config
     context: .
     dockerfile: Dockerfile
   volumes:
-    - ~/.nanobot:/root/.nanobot
+    - /root/.nanobot:/root/.nanobot
 
 services:
+  nanobot-init:
+    <<: *common-config
+    container_name: nanobot-init
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        if [ ! -f /root/.nanobot/config.json ]; then
+          nanobot onboard
+        else
+          echo "Config exists, skipping onboard"
+        fi
+    restart: "no"
+
   nanobot-gateway:
     container_name: nanobot-gateway
     <<: *common-config
     command: ["gateway"]
     restart: unless-stopped
+    depends_on:
+      nanobot-init:
+        condition: service_completed_successfully
     ports:
       - 18790:18790
     deploy:
@@ -21,7 +37,7 @@ services:
         reservations:
           cpus: '0.25'
           memory: 256M
-  
+
   nanobot-cli:
     <<: *common-config
     profiles:
