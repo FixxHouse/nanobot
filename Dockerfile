@@ -25,6 +25,10 @@ COPY nanobot/ nanobot/
 COPY bridge/ bridge/
 RUN uv pip install --system --no-cache .
 
+# Install channel plugins
+COPY nanobot-channel-webhook/ nanobot-channel-webhook/
+RUN uv pip install --system --no-cache --no-deps ./nanobot-channel-webhook
+
 # Build the WhatsApp bridge
 WORKDIR /app/bridge
 RUN npm install && npm run build

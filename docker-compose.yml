@@ -29,6 +29,7 @@ services:
         condition: service_completed_successfully
     ports:
       - 18790:18790
+      - 9000:9000
     deploy:
       resources:
         limits:
