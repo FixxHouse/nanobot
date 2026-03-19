@@ -3,6 +3,7 @@
 import asyncio
 from typing import Any
 
+import aiohttp
 from aiohttp import web
 from loguru import logger
 from nanobot.channels.base import BaseChannel
@@ -26,6 +27,8 @@ class WebhookChannel(BaseChannel):
             config = WebhookConfig.model_validate(config)
         super().__init__(config, bus)
         self.config: WebhookConfig = config
+        self._callback_urls: dict[str, str] = {}  # chat_id -> callback_url
+        self._session: aiohttp.ClientSession | None = None
 
     @classmethod
     def default_config(cls) -> dict[str, Any]:
@@ -33,6 +36,7 @@ class WebhookChannel(BaseChannel):
 
     async def start(self) -> None:
         self._running = True
+        self._session = aiohttp.ClientSession()
 
         app = web.Application()
         app.router.add_post("/message", self._on_request)
@@ -46,12 +50,31 @@ class WebhookChannel(BaseChannel):
             await asyncio.sleep(1)
 
         await runner.cleanup()
+        if self._session:
+            await self._session.close()
 
     async def stop(self) -> None:
         self._running = False
 
     async def send(self, msg: OutboundMessage) -> None:
-        logger.info("[webhook] -> {}: {}", msg.chat_id, (msg.content or "")[:80])
+        callback_url = self._callback_urls.get(msg.chat_id)
+        if not callback_url or not self._session:
+            logger.warning("[webhook] no callback_url for chat_id={}, dropping reply", msg.chat_id)
+            return
+
+        payload = {
+            "chat_id": msg.chat_id,
+            "content": msg.content or "",
+            "media": msg.media or [],
+        }
+
+        try:
+            async with self._session.post(callback_url, json=payload) as resp:
+                if resp.status >= 400:
+                    body = await resp.text()
+                    logger.warning("[webhook] callback failed ({}): {}", resp.status, body[:200])
+        except Exception as e:
+            logger.warning("[webhook] callback error for {}: {}", msg.chat_id, e)
 
     async def _on_request(self, request: web.Request) -> web.Response:
         try:
@@ -63,6 +86,10 @@ class WebhookChannel(BaseChannel):
         chat_id = body.get("chat_id", sender)
         text = body.get("text", "")
         media = body.get("media", [])
+        callback_url = body.get("callback_url")
+
+        if callback_url:
+            self._callback_urls[chat_id] = callback_url
 
         await self._handle_message(
             sender_id=sender,
