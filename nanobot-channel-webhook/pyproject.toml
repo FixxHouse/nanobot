@@ -8,4 +8,4 @@ webhook = "nanobot_channel_webhook:WebhookChannel"
 
 [build-system]
 requires = ["setuptools"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
