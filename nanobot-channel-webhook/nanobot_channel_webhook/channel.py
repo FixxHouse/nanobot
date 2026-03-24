@@ -66,6 +66,12 @@ class WebhookChannel(BaseChannel):
 
     async def send(self, msg: OutboundMessage) -> None:
         logger.debug("[webhook] send() called, msg={}", msg)
+
+        # Skip intermediate progress messages, only send final content
+        if msg.metadata and msg.metadata.get("_progress"):
+            logger.debug("[webhook] skipping progress message for chat_id={}", msg.chat_id)
+            return
+
         callback_url = self._callback_urls.get(msg.chat_id)
         if not callback_url or not self._session:
             logger.warning("[webhook] no callback_url for chat_id={}, dropping reply "
